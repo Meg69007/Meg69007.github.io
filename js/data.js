@@ -2,7 +2,6 @@
 window.PORTFOLIO = {
   identity: {
     name: "Gabriel Megroian",
-    nickname: "Momo",
     role: "Développeur d'applications",
     school: "Epitech Lyon, 3e année",
     pitch: "Je conçois et développe des applications complètes, de l'API à l'interface. Formé à la programmation système et réseau en C et C++, je travaille aujourd'hui sur le web, la cybersécurité et l'intégration de l'IA.",
@@ -257,7 +256,7 @@ window.PORTFOLIO = {
     { period: "Promotion 2029", title: "Programme Grande École", place: "Epitech Lyon",
       text: "Actuellement en 3e année. Projets en C, C++ et Python, réseau, sécurité et mathématiques appliquées." },
     { period: "2021 à 2022", title: "Année préparatoire à la médecine", place: "Mediplus",
-      text: "Une première voie avant l'informatique." }
+      text: "Année de préparation intensive aux études de médecine. J'y ai acquis une méthode de travail rigoureuse et l'habitude d'assimiler vite de gros volumes de connaissances, que j'applique aujourd'hui à l'informatique." }
   ],
 
   /* Liens à renseigner par Gabriel. href vide = afficher l'entrée comme « à renseigner ». */

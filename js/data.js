@@ -150,7 +150,7 @@ window.PORTFOLIO = {
       id: "my-pgp",
       title: "my_pgp",
       domain: "cyber",
-      date: "Octobre 2026, en cours",
+      date: "Octobre 2026",
       context: "Projet Epitech G-CNA-500, en groupe",
       summary: "Implémentation d'algorithmes de chiffrement, du XOR jusqu'à un schéma hybride de type PGP.",
       points: [

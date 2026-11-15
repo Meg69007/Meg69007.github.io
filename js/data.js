@@ -36,16 +36,16 @@ window.PORTFOLIO = {
     },
     {
       id: "saas-internes",
-      title: "SaaS sur mesure",
+      title: "Applications métier SaaS",
       domain: "web",
       date: "Depuis octobre 2026",
       context: "Temps partiel chez Moontech, en parallèle d'Epitech",
-      summary: "Conception et développement de SaaS complets pour Moontech, de la base de données à l'interface.",
+      summary: "Conception et développement de SaaS complets chez Moontech, pour un usage interne à l'entreprise ou proposés à ses clients.",
       points: [
         "Back-end principalement en Laravel, interface en React, JavaScript et Tailwind CSS",
         "Fonctions d'IA intégrées aux outils, par l'API Claude ou par des flux n8n",
         "Connexions à des API tierces et automatisations n8n quand le besoin s'y prête",
-        "Applications métier utilisées au quotidien par les équipes"
+        "Applications développées de bout en bout, de la base de données à l'interface"
       ],
       stack: ["Laravel", "React", "JavaScript", "Tailwind CSS", "n8n", "API Claude", "API REST"]
     },
@@ -251,7 +251,7 @@ window.PORTFOLIO = {
   /* Du plus récent au plus ancien. */
   timeline: [
     { period: "Depuis octobre 2026", title: "Développeur à temps partiel", place: "Moontech, en parallèle d'Epitech",
-      text: "Développement de SaaS complets, du back-end à l'interface, principalement en Laravel, avec React, Tailwind CSS, des connexions d'API, n8n et de l'IA intégrée par l'API Claude." },
+      text: "Développement d'applications métier SaaS, pour l'entreprise ou pour ses clients, principalement en Laravel, avec React, Tailwind CSS, des connexions d'API, n8n et de l'IA intégrée par l'API Claude." },
     { period: "Août à décembre 2025", title: "Technicien et développeur", place: "UP IT",
       text: "Scripts d'automatisation, administration de machines virtuelles et de serveurs Proxmox, VPN, bases de données, gestion du parc réseau (pare-feu, serveurs, switchs, routeurs) et relation client." },
     { period: "Promotion 2029", title: "Programme Grande École", place: "Epitech Lyon",

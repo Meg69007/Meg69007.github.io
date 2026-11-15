@@ -190,13 +190,13 @@ window.PORTFOLIO = {
     },
     {
       id: "aws-microservices",
-      title: "Du monolithe aux microservices",
+      title: "Formation AWS et hackathon AWS",
       domain: "cloud",
       date: "Juin 2026",
-      context: "Lab AWS",
-      summary: "Découpage d'une application Node.js monolithique en microservices conteneurisés sur AWS.",
+      context: "Formation et hackathon AWS",
+      summary: "Formation pratique sur AWS et participation à un hackathon AWS, avec la migration d'une application Node.js monolithique vers des microservices conteneurisés.",
       points: [
-        "Conteneurisation de chaque service avec Docker",
+        "Découpage du monolithe en services et conteneurisation de chacun avec Docker",
         "Dépôts CodeCommit et environnement Cloud9",
         "Base de données gérée sur RDS"
       ],

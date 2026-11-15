@@ -73,9 +73,10 @@ window.PORTFOLIO = {
       points: [
         "Serveur qui gère le monde, les ressources et les joueurs connectés",
         "Protocole réseau entre le serveur, l'interface graphique et les IA",
-        "IA clientes qui jouent seules et coopèrent pour faire monter leur équipe de niveau"
+        "IA clientes qui jouent seules et coopèrent pour faire monter leur équipe de niveau",
+        "Développé en Python et en C++"
       ],
-      stack: ["Réseau", "Sockets", "Protocole client-serveur", "IA de jeu"]
+      stack: ["Python", "C++", "Sockets", "Protocole client-serveur", "IA de jeu"]
     },
     {
       id: "minishell",
@@ -194,14 +195,15 @@ window.PORTFOLIO = {
       domain: "cloud",
       date: "Juin 2026",
       context: "Formation et hackathon AWS",
-      summary: "Formation pratique sur AWS et participation à un hackathon AWS, avec la migration d'une application Node.js monolithique vers des microservices conteneurisés.",
+      summary: "Formation pratique sur AWS, avec la migration d'une application monolithique vers des microservices, puis hackathon AWS consacré au déploiement d'une infrastructure EC2 et de son réseau.",
       points: [
         "Formation : migration d'une application Node.js monolithique vers des microservices",
         "Conteneurisation de chaque service avec Docker, dépôts CodeCommit, environnement Cloud9",
         "Base de données gérée sur RDS",
-        "Hackathon : conception d'une solution sur AWS en équipe et en temps limité"
+        "Hackathon : création et configuration d'instances EC2",
+        "Hackathon : mise en place du réseau, tables de routage et règles de sécurité"
       ],
-      stack: ["AWS", "Docker", "Node.js", "RDS"]
+      stack: ["AWS", "EC2", "Réseau cloud", "Docker", "Node.js", "RDS"]
     }
   ],
 
@@ -209,8 +211,8 @@ window.PORTFOLIO = {
   skills: [
     { group: "Langages", items: [
       { name: "C", projects: ["myftp", "minishell", "libc"] },
-      { name: "C++", projects: ["arcade", "raytracer"] },
-      { name: "Python", projects: ["interstonar"] },
+      { name: "C++", projects: ["arcade", "raytracer", "zappy"] },
+      { name: "Python", projects: ["interstonar", "zappy"] },
       { name: "JavaScript / TypeScript", projects: ["ticket-tout", "saas-internes"] },
       { name: "SQL", projects: ["ticket-tout"] },
       { name: "Bash", projects: [] }

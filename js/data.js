@@ -56,12 +56,12 @@ window.PORTFOLIO = {
       context: "Projet Epitech G-NWP-400",
       summary: "Serveur FTP en C conforme à la RFC 959, multi-clients.",
       points: [
-        "Multiplexage des connexions avec poll() et transferts de données dans des processus fork()",
+        "Multiplexage des connexions pour servir plusieurs clients en parallèle",
         "Tampons d'écriture par client pour ne jamais bloquer la boucle principale",
         "Résolution de chemins protégée contre la traversée de répertoires",
         "Tableau de clients dynamique qui grandit à la demande"
       ],
-      stack: ["C", "Sockets", "poll()", "fork()"]
+      stack: ["C", "Sockets", "Multiplexage", "RFC 959"]
     },
     {
       id: "zappy",

@@ -196,9 +196,10 @@ window.PORTFOLIO = {
       context: "Formation et hackathon AWS",
       summary: "Formation pratique sur AWS et participation à un hackathon AWS, avec la migration d'une application Node.js monolithique vers des microservices conteneurisés.",
       points: [
-        "Découpage du monolithe en services et conteneurisation de chacun avec Docker",
-        "Dépôts CodeCommit et environnement Cloud9",
-        "Base de données gérée sur RDS"
+        "Formation : migration d'une application Node.js monolithique vers des microservices",
+        "Conteneurisation de chaque service avec Docker, dépôts CodeCommit, environnement Cloud9",
+        "Base de données gérée sur RDS",
+        "Hackathon : conception d'une solution sur AWS en équipe et en temps limité"
       ],
       stack: ["AWS", "Docker", "Node.js", "RDS"]
     }

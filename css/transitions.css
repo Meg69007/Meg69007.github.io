@@ -1,0 +1,165 @@
+/* Transitions au défilement : plongée du hero, bandeaux cinétiques, états utiles aux révélations.
+   Le mouvement lui-même est écrit par js/transitions.js (GSAP ScrollTrigger + Lenis), uniquement en
+   transform, opacity et clip-path. Les classes .has-motion et .has-dive ne sont posées sur <html> que
+   lorsque GSAP est prêt : sans JS, sans CDN ou avec prefers-reduced-motion, la page reste simple et entièrement visible. */
+
+/* ---------- Lenis (feuille de la bibliothèque, recopiée ici : pas de feuille externe) ---------- */
+html.lenis, html.lenis body { height: auto; }
+/* Dès que ScrollTrigger pilote la page, le défilement doux natif est coupé : les ancres passent par
+   transitions.js, et une position écrite image par image ne doit jamais relancer une animation native. */
+html.has-st, html.lenis.lenis-smooth { scroll-behavior: auto; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* ---------- Scène du hero ---------- */
+.stage { position: relative; }
+
+/* Plongée : la scène devient une cale d'une hauteur d'écran, le hero un calque fixe posé au-dessus de la page.
+   La section Projets remonte dessous ; transitions.js perce le calque d'un iris centré sur le corps central. */
+html.has-dive { scroll-padding-top: 0; }
+.has-dive .stage { height: 100vh; }
+.has-dive .stage-pin {
+  position: fixed; z-index: 5;
+  top: 0; left: 0; right: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  contain: layout paint;
+  background:
+    radial-gradient(70vmax 70vmax at -6% -14%, rgba(124, 143, 255, .30), rgba(124, 143, 255, 0) 62%),
+    radial-gradient(62vmax 62vmax at 108% 110%, rgba(255, 107, 152, .17), rgba(255, 107, 152, 0) 62%),
+    var(--paper);
+}
+.has-dive .stage-pin.is-gone { visibility: hidden; }
+.has-dive .stage-pin.is-diving .actions, .has-dive .stage-pin.is-diving .sim-controls { pointer-events: none; }
+.has-dive .hero { flex: 1 1 auto; min-height: 0; }
+.has-dive .marquee { flex: none; }
+.has-dive .name { font-size: clamp(3rem, min(11vw, 17.5vh), 9rem); }
+.has-dive .name-line, .has-dive .hero-copy, .has-dive .hero-cta { will-change: transform, opacity; }
+
+/* Lueur qui enfle autour du corps central pendant la plongée. Petit calque agrandi en transform :
+   la trame est dessinée une fois, à petite taille (un halo supporte très bien l'agrandissement). */
+.has-dive .dive-glow {
+  display: block;
+  position: absolute; z-index: 0; left: 0; top: 0;
+  width: 480px; height: 480px; margin: -240px 0 0 -240px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(150, 165, 255, .42), rgba(124, 143, 255, .20) 28%, rgba(255, 107, 152, .10) 55%, rgba(255, 107, 152, 0));
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+/* Anneau lumineux au bord de l'iris (hors du calque percé, sinon il serait découpé avec lui).
+   Même principe : 480 px de base, mis à l'échelle par transitions.js jusqu'au rayon de l'iris. */
+.has-dive .iris-ring {
+  display: block;
+  position: fixed; z-index: 6; left: 0; top: 0;
+  width: 480px; height: 480px; margin: -240px 0 0 -240px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 107, 152, 0) 80%, rgba(255, 107, 152, .28) 92%, rgba(205, 214, 255, .95) 97.5%, rgba(205, 214, 255, .95) 98.6%, rgba(124, 143, 255, 0) 100%);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+/* Halo extérieur de l'anneau */
+.has-dive .iris-ring::before {
+  content: ""; position: absolute; inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(124, 143, 255, 0) 74%, rgba(124, 143, 255, .5) 78.5%, rgba(124, 143, 255, .18) 88%, rgba(124, 143, 255, 0) 100%);
+}
+
+/* ---------- Rythme des sections ---------- */
+.section { padding-bottom: clamp(2.5rem, 5vw, 4.5rem); }
+/* Après un bandeau : juste de quoi dégager la barre de navigation quand on arrive pile au début de la section */
+.kband + .section { padding-top: calc(var(--nav-h) + 1.75rem); }
+.kband + .section-contact { display: flex; flex-direction: column; justify-content: center; padding-top: calc(var(--nav-h) + 2.5rem); }
+
+/* ---------- Bandeau typographique cinétique ---------- */
+.kband {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(2.5rem, 7vw, 6rem) clamp(.5rem, 2vw, 1.5rem);
+  pointer-events: none;
+  -webkit-user-select: none; user-select: none;
+  contain: layout paint;
+}
+.kband-track { display: flex; width: max-content; transform: translateX(-12%); }
+.kband-inner { display: flex; align-items: baseline; gap: .32em; padding-inline: .16em; font-size: clamp(5rem, 17vw, 17rem); transform-origin: 50% 60%; }
+.kword {
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: .95;
+  letter-spacing: -.035em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(154, 165, 204, .5);
+}
+.kword-fill {
+  -webkit-text-stroke: 0;
+  background: linear-gradient(100deg, rgba(124, 143, 255, .9), rgba(255, 107, 152, .9));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@supports not (-webkit-text-stroke: 1px red) {
+  .kword { color: rgba(154, 165, 204, .22); }
+}
+.has-motion .kband-track, .has-motion .kband-inner { will-change: transform; }
+
+/* ---------- États utiles aux animations (posés seulement quand GSAP pilote) ---------- */
+.has-motion .grid { perspective: 1400px; }
+.has-motion .cell { will-change: transform, opacity; transform-origin: 50% 100%; }
+.has-motion .section-title .ch { display: inline-block; will-change: transform, opacity; }
+/* Lettres séparées : le dégradé du titre est réparti lettre par lettre (voir transitions.js) */
+.has-motion .ln-in.is-split { background: none; }
+.has-motion #projets-titre { transform-origin: 0 100%; }
+.has-motion #projets-titre .ln { overflow: visible; }
+.has-motion .contact-title .ln { overflow: visible; }
+.has-motion .contact-title .ln-in { transform-origin: 0 55%; }
+.has-motion .pills > li { will-change: transform, opacity; }
+.has-motion .tl-line { will-change: transform; }
+
+/* ---------- Indicateur vertical ---------- */
+.rail {
+  position: fixed; z-index: 40;
+  right: .6rem; top: 50%;
+  transform: translateY(-50%);
+}
+.rail ul { display: flex; flex-direction: column; align-items: center; }
+.rail a {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  width: 1.5rem; padding: .5rem 0;
+  text-decoration: none;
+}
+.rail-dot {
+  display: block;
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: rgba(230, 234, 247, .38);
+  transition: height .5s var(--ease), background-color .3s, box-shadow .4s;
+}
+.rail a:hover .rail-dot, .rail a:focus-visible .rail-dot { background: rgba(230, 234, 247, .85); }
+.rail a[aria-current="true"] .rail-dot {
+  height: 1.9rem;
+  background: linear-gradient(to bottom, #7C8FFF, #FF6B98);
+  box-shadow: 0 0 12px rgba(124, 143, 255, .65);
+}
+.rail a:focus-visible { outline-offset: -2px; border-radius: 8px; }
+.rail-tip {
+  position: absolute; right: calc(100% + .35rem); top: 50%;
+  padding: .25rem .7rem;
+  border: 1px solid var(--glass-border); border-radius: 999px;
+  background: rgba(14, 19, 46, .96);
+  color: var(--ink); font-size: .85rem; font-weight: 500; white-space: nowrap;
+  opacity: 0; transform: translate(6px, -50%);
+  transition: opacity .2s, transform .3s var(--ease);
+  pointer-events: none;
+}
+.rail a:hover .rail-tip, .rail a:focus-visible .rail-tip { opacity: 1; transform: translate(0, -50%); }
+@media (max-width: 899px) { .rail { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rail-dot, .rail-tip { transition: none; }
+  .kband-track { transform: translateX(-6%); }
+}

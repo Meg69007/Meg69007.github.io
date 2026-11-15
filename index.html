@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gabriel Megroian, portfolio</title>
+  <meta name="description" content="Portfolio de Gabriel « Momo » Megroian, développeur d'applications, étudiant à Epitech Lyon.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#080C20">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Instrument+Sans:wght@400..700&amp;family=Martian+Mono:wght@400&amp;display=swap">
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/transitions.css">
+  <script src="js/data.js" defer></script>
+  <script src="js/visuals-a.js" defer></script>
+  <script src="js/visuals-b.js" defer></script>
+  <script src="js/visuals-c.js" defer></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/sim.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha512-onMTRKJBKz8M1TnqqDuGBlowlH0ohFzMXYRNebz+yOcc5TQr/zAKsthzhuv0hiyUKEiQEQXEynnXCvNTOk50dg==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+  <script src="js/vendor/lenis.min.js" defer></script>
+  <script src="js/transitions.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#projets">Aller au contenu</a>
+
+  <div class="ambient" aria-hidden="true">
+    <i class="halo halo-1"></i>
+    <i class="halo halo-2"></i>
+    <i class="halo halo-3"></i>
+    <i class="grain"></i>
+  </div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <nav class="nav" aria-label="Navigation principale">
+    <div class="nav-inner">
+      <a class="brand" href="#haut">Momo</a>
+      <ul class="nav-links" id="nav-links">
+        <li class="nav-ind" id="nav-ind" aria-hidden="true"></li>
+        <li><a href="#projets" data-section="projets">Projets</a></li>
+        <li><a href="#competences" data-section="competences">Compétences</a></li>
+        <li><a href="#parcours" data-section="parcours">Parcours</a></li>
+        <li><a href="#contact" data-section="contact">Contact</a></li>
+      </ul>
+      <button class="nav-btn" id="palette-open" type="button" aria-haspopup="dialog" aria-keyshortcuts="Control+K">
+        <span>Rechercher</span><kbd class="kbd">Ctrl K</kbd>
+      </button>
+    </div>
+  </nav>
+
+  <div class="stage" id="stage">
+  <div class="stage-pin" id="stage-pin">
+  <header class="hero" id="haut">
+    <canvas id="sim" aria-hidden="true"></canvas>
+    <i class="dive-glow" aria-hidden="true"></i>
+    <i class="hero-shade hero-shade-l" aria-hidden="true"></i>
+    <i class="hero-shade hero-shade-b" aria-hidden="true"></i>
+    <div class="wrap hero-wrap">
+      <div class="hero-inner">
+        <h1 class="name">
+          <span class="name-line"><span class="name-text">Gabriel</span></span>
+          <span class="name-line"><span class="name-text">Megroian</span></span>
+        </h1>
+        <div class="hero-copy">
+          <p class="hero-role"><span class="role">Développeur d'applications</span> <span class="school">Epitech Lyon, 3e année</span></p>
+          <p class="hero-pitch">Je conçois et développe des applications complètes, de l'API à l'interface. Formé à la programmation système et réseau en C et C++, je travaille aujourd'hui sur le web, la cybersécurité et l'intégration de l'IA.</p>
+        </div>
+        <div class="hero-cta">
+          <p class="hero-status"><span class="status-dot" aria-hidden="true"></span><span>Recherche un stage à temps plein, de mars à août 2027</span></p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#projets" data-magnetic>Voir les projets</a>
+            <a class="btn btn-glass" href="#contact" data-magnetic>Me contacter</a>
+          </div>
+        </div>
+      </div>
+      <div class="sim-controls" hidden style="display:none">
+        <p class="sim-help">Cliquez dans le ciel pour ajouter un corps.</p>
+        <div class="sim-buttons">
+          <button class="sim-btn" id="sim-toggle" type="button">Mettre en pause</button>
+          <button class="sim-btn" id="sim-reset" type="button">Relancer</button>
+          <output class="sim-count" id="sim-count" aria-live="off"></output>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="marquee" role="group" aria-label="Technologies utilisées dans les projets">
+    <div class="marquee-track" id="marquee-track"></div>
+  </div>
+  </div>
+  <i class="iris-ring" id="iris-ring" aria-hidden="true"></i>
+  </div>
+
+  <main>
+    <section class="section section-projets" id="projets" aria-labelledby="projets-titre">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 class="section-title" id="projets-titre"><span class="ln"><span class="ln-in">Projets</span></span></h2>
+          <ul class="stats" id="stats" hidden style="display:none"></ul>
+        </div>
+        <div class="filters" id="filters" role="group" aria-label="Filtrer les projets par domaine"><i class="filter-ind" id="filter-ind" aria-hidden="true"></i></div>
+        <p class="sr-only" id="filters-live" aria-live="polite"></p>
+        <div class="grid" id="project-grid"></div>
+      </div>
+    </section>
+
+    <div class="kband" aria-hidden="true">
+      <div class="kband-track"><div class="kband-inner"><span class="kword">Compétences</span><span class="kword kword-fill">Compétences</span><span class="kword">Compétences</span><span class="kword kword-fill">Compétences</span></div></div>
+    </div>
+
+    <section class="section" id="competences" aria-labelledby="competences-titre">
+      <div class="wrap">
+        <h2 class="section-title" id="competences-titre"><span class="ln"><span class="ln-in">Compétences</span></span></h2>
+        <p class="section-lead" hidden style="display:none"></p>
+        <p class="sr-only" id="skills-live" aria-live="polite"></p>
+        <div class="skills">
+          <div class="skills-groups" id="skills-groups"></div>
+          <aside class="skills-index" aria-label="Index des projets">
+            <div class="readout">
+              <p class="readout-name" id="ro-name"></p>
+              <p class="readout-count"><span id="ro-num"></span><span id="ro-unit"></span></p>
+            </div>
+            <ul class="proj-index" id="proj-index"></ul>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <div class="kband" aria-hidden="true">
+      <div class="kband-track"><div class="kband-inner"><span class="kword">Parcours</span><span class="kword kword-fill">Parcours</span><span class="kword">Parcours</span><span class="kword kword-fill">Parcours</span></div></div>
+    </div>
+
+    <section class="section" id="parcours" aria-labelledby="parcours-titre">
+      <div class="wrap">
+        <h2 class="section-title" id="parcours-titre"><span class="ln"><span class="ln-in">Parcours</span></span></h2>
+        <div class="timeline-wrap">
+          <i class="tl-rail" aria-hidden="true"><i class="tl-line" id="tl-line"></i></i>
+          <ol class="timeline" id="timeline"></ol>
+        </div>
+      </div>
+    </section>
+
+    <div class="kband" aria-hidden="true">
+      <div class="kband-track"><div class="kband-inner"><span class="kword">Contact</span><span class="kword kword-fill">Contact</span><span class="kword">Contact</span><span class="kword kword-fill">Contact</span></div></div>
+    </div>
+
+    <section class="section section-contact" id="contact" aria-labelledby="contact-titre">
+      <div class="wrap contact-wrap">
+        <i class="contact-halo" aria-hidden="true"></i>
+        <h2 class="contact-title" id="contact-titre"><span class="ln"><span class="ln-in">Travaillons</span></span> <span class="ln"><span class="ln-in">ensemble.</span></span></h2>
+        <p class="contact-status" id="contact-status"></p>
+        <ul class="contact-list" id="contact-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>Gabriel Megroian, 2026</p>
+    </div>
+  </footer>
+
+  <dialog class="panel" id="project-panel" aria-labelledby="pp-title">
+    <div class="panel-body" data-lenis-prevent>
+      <div class="panel-bar">
+        <p class="chip" id="pp-domain"></p>
+        <button class="btn btn-glass btn-small" id="pp-close" type="button">Fermer</button>
+      </div>
+      <div class="panel-visual pv" aria-hidden="true"><canvas id="pp-canvas"></canvas></div>
+      <div class="panel-content">
+        <h2 class="panel-title" id="pp-title"></h2>
+        <p class="panel-context" id="pp-context"></p>
+        <p class="panel-date" id="pp-date"></p>
+        <p class="panel-summary" id="pp-summary"></p>
+        <ul class="panel-points" id="pp-points"></ul>
+        <h3 class="panel-sub">Stack</h3>
+        <ul class="tags" id="pp-stack"></ul>
+        <div class="panel-nav">
+          <button class="btn btn-glass btn-small" id="pp-prev" type="button">Projet précédent</button>
+          <p class="panel-count" id="pp-count"></p>
+          <button class="btn btn-glass btn-small" id="pp-next" type="button">Projet suivant</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="palette" id="palette" aria-label="Palette de commandes">
+    <div class="palette-body">
+      <div class="palette-field">
+        <span class="palette-prompt" aria-hidden="true">&gt;</span>
+        <input class="palette-input" id="palette-input" type="text" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Rechercher une section, un projet ou une action" placeholder="Rechercher" autocomplete="off" spellcheck="false">
+      </div>
+      <ul class="palette-list" id="palette-list" role="listbox" aria-label="Résultats" data-lenis-prevent></ul>
+      <p class="palette-empty" id="palette-empty" hidden>Aucun résultat.</p>
+    </div>
+  </dialog>
+</body>
+</html>

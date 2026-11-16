@@ -858,18 +858,24 @@
           h("span", { class: "contact-value", text: shown })
         ])];
         if (/^mailto:/.test(c.href) || /mail/i.test(c.label)) {
-          var copy = h("button", { class: "btn btn-glass btn-small", type: "button", text: "Copier l'adresse", "data-magnetic": "" });
+          var copy = h("button", { class: "btn btn-glass btn-small", type: "button", text: "Copier l'adresse", "data-magnetic": "", "aria-live": "polite" });
           var timer = null;
+          /* Retour visible pendant 2 s : succès (teinte du site) ou échec (presse-papiers refusé) */
+          var flash = function (ok) {
+            copy.textContent = ok ? "Adresse copiée" : "Copie impossible";
+            copy.classList.toggle("is-done", ok);
+            copy.classList.toggle("is-fail", !ok);
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+              copy.textContent = "Copier l'adresse";
+              copy.classList.remove("is-done", "is-fail");
+            }, 2000);
+          };
           copy.addEventListener("click", function () {
             try {
               var res = navigator.clipboard.writeText(c.value || c.href.replace(/^mailto:/, ""));
-              var done = function () {
-                copy.textContent = "Adresse copiée";
-                clearTimeout(timer);
-                timer = setTimeout(function () { copy.textContent = "Copier l'adresse"; }, 2000);
-              };
-              if (res && res.then) res.then(done, function () {}); else done();
-            } catch (e) {}
+              if (res && res.then) res.then(function () { flash(true); }, function () { flash(false); }); else flash(true);
+            } catch (e) { flash(false); }
           });
           kids.push(copy);
         }
@@ -910,7 +916,7 @@
   window.addEventListener("resize", function () { placeFilterInd(true); placeNav(); });
 
   /* ---------- Pointeur : projecteur, inclinaison, effet magnétique (un seul écouteur) ---------- */
-  var ptr = { x: 0, y: 0, target: null, raf: 0 };
+  var ptr = { x: 0, y: 0, target: null, raf: 0, inside: false };
   var spotCur = null;
   var magnets = [];
 
@@ -968,10 +974,20 @@
     magnets = $$("[data-magnetic]");
     document.addEventListener("pointermove", function (e) {
       if (e.pointerType === "touch") return;
-      ptr.x = e.clientX; ptr.y = e.clientY; ptr.target = e.target;
+      ptr.x = e.clientX; ptr.y = e.clientY; ptr.target = e.target; ptr.inside = true;
       if (!ptr.raf) ptr.raf = requestAnimationFrame(pointerFrame);
     }, { passive: true });
+    /* Molette sans bouger la souris : la page glisse sous le pointeur, on retrouve l'élément survolé
+       (un seul test par image) pour qu'aucune carte ne reste inclinée ou allumée. */
+    window.addEventListener("scroll", function () {
+      if (!ptr.inside || ptr.raf) return;
+      ptr.raf = requestAnimationFrame(function () {
+        ptr.target = document.elementFromPoint(ptr.x, ptr.y);
+        pointerFrame();
+      });
+    }, { passive: true });
     document.documentElement.addEventListener("pointerleave", function () {
+      ptr.inside = false;
       ptr.target = null;
       if (!ptr.raf) ptr.raf = requestAnimationFrame(pointerFrame);
       magnets.forEach(function (m) { m.classList.remove("is-mag"); m.style.transform = ""; });
@@ -1039,6 +1055,13 @@
       palList.appendChild(li);
     });
     palEmpty.hidden = shownCmds.length > 0;
+    if (!shownCmds.length) {
+      /* Message utile : rappelle la saisie et ce que l'on peut chercher */
+      palEmpty.textContent = "";
+      palEmpty.appendChild(document.createTextNode("Aucun résultat pour "));
+      palEmpty.appendChild(h("strong", { text: "«\u00A0" + q.trim() + "\u00A0»" }));
+      palEmpty.appendChild(document.createTextNode(". Essayez un nom de projet, une technologie (C, React, AWS) ou une section."));
+    }
     setSel(0, true);
   }
 

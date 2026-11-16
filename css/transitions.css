@@ -34,7 +34,17 @@ html.has-dive { scroll-padding-top: 0; }
 .has-dive .stage-pin.is-diving .actions, .has-dive .stage-pin.is-diving .sim-controls { pointer-events: none; }
 .has-dive .hero { flex: 1 1 auto; min-height: 0; }
 .has-dive .marquee { flex: none; }
-.has-dive .name { font-size: clamp(3rem, min(11vw, 17.5vh), 9rem); }
+/* La taille du nom suit aussi la hauteur disponible : sur un écran bas (portable 1366 x 657, 1280 x 720),
+   le bloc du hero tient sous la barre de navigation au lieu de passer dessous. */
+.has-dive .name { font-size: clamp(3rem, min(11vw, 17.5vh, 50vh - 16rem), 9rem); }
+@media (max-height: 760px) {
+  .has-dive .name { font-size: clamp(3rem, min(11vw, 17.5vh, 50vh - 14rem), 9rem); }
+  .has-dive .hero { padding-bottom: 1.75rem; }
+  .has-dive .hero-inner { padding-bottom: .5rem; }
+  .has-dive .hero-role { margin-top: 1.1rem; }
+  .has-dive .hero-status { margin-top: .9rem; }
+  .has-dive .actions { margin-top: 1.2rem; }
+}
 .has-dive .name-line, .has-dive .hero-copy, .has-dive .hero-cta { will-change: transform, opacity; }
 
 /* Lueur qui enfle autour du corps central pendant la plongée. Petit calque agrandi en transform :
@@ -75,34 +85,37 @@ html.has-dive { scroll-padding-top: 0; }
 .kband + .section-contact { display: flex; flex-direction: column; justify-content: center; padding-top: calc(var(--nav-h) + 2.5rem); }
 
 /* ---------- Bandeau typographique cinétique ---------- */
+/* Décor, distinct du titre de section : mot en contour fin à faible opacité, plus grand que le titre, qui glisse
+   derrière le haut de la section suivante (le titre réel passe devant). */
 .kband {
-  position: relative;
+  --kfs: clamp(6rem, 19vw, 19rem);
+  position: relative; z-index: 0;
   overflow: hidden;
-  padding-block: clamp(2.5rem, 7vw, 6rem) clamp(.5rem, 2vw, 1.5rem);
+  padding-block: clamp(1.5rem, 4vw, 3.5rem) 0;
+  margin-bottom: calc(var(--kfs) * -.5);
   pointer-events: none;
   -webkit-user-select: none; user-select: none;
   contain: layout paint;
 }
+.kband + .section { position: relative; z-index: 1; }
 .kband-track { display: flex; width: max-content; transform: translateX(-12%); }
-.kband-inner { display: flex; align-items: baseline; gap: .32em; padding-inline: .16em; font-size: clamp(5rem, 17vw, 17rem); transform-origin: 50% 60%; }
+.kband-inner { display: flex; align-items: baseline; gap: .32em; padding-inline: .16em; font-size: var(--kfs); transform-origin: 50% 60%; }
 .kword {
   flex: none;
   font-family: var(--font-display);
   font-weight: 800;
-  line-height: .95;
+  line-height: 1;
   letter-spacing: -.035em;
   white-space: nowrap;
   color: transparent;
-  -webkit-text-stroke: 1.5px rgba(154, 165, 204, .5);
-}
-.kword-fill {
-  -webkit-text-stroke: 0;
-  background: linear-gradient(100deg, rgba(124, 143, 255, .9), rgba(255, 107, 152, .9));
-  -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1px rgba(154, 165, 204, .17);
 }
+/* Un mot sur deux prend un contour pervenche, à peine plus présent */
+.kword-fill { -webkit-text-stroke: 1px rgba(124, 143, 255, .26); }
 @supports not (-webkit-text-stroke: 1px red) {
-  .kword { color: rgba(154, 165, 204, .22); }
+  .kword { color: rgba(154, 165, 204, .06); }
+  .kword-fill { color: rgba(124, 143, 255, .08); }
 }
 .has-motion .kband-track, .has-motion .kband-inner { will-change: transform; }
 

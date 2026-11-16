@@ -194,7 +194,7 @@ window.PORTFOLIO = {
       title: "Formation AWS et hackathon AWS",
       domain: "cloud",
       date: "Juin 2026",
-      context: "Formation et hackathon AWS",
+      context: "Amazon Web Services",
       summary: "Formation pratique sur AWS, avec la migration d'une application monolithique vers des microservices, puis hackathon AWS consacré au déploiement d'une infrastructure EC2 et de son réseau.",
       points: [
         "Formation : migration d'une application Node.js monolithique vers des microservices",

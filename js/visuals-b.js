@@ -381,7 +381,7 @@
       var cpos = u < 8.2 ? typed : 0, typing = u > T0 && u < C.tEnd;
       var cOn = typing || ((u < enter || u > 8.2) && frac(t * 1.7) < 0.55);
       if (cOn) { x.fillStyle = c(WH, 0.85); x.fillRect(cx0 + cpos * cw + 1, l1 - fs * 0.82, cw * 0.62, fs * 1.0); }
-      if (u > enter - 0.05 && u < enter + 0.5) halo(x, cx0 + C.str.length * cw * 0.5, l1 - fs * 0.3, C.str.length * cw * 0.6, IR, 0.18 * (1 - ss(enter, enter + 0.5, u)));
+      if (u > enter - 0.15 && u < enter + 0.5) halo(x, cx0 + C.str.length * cw * 0.5, l1 - fs * 0.3, C.str.length * cw * 0.6, IR, 0.18 * ss(enter - 0.15, enter, u) * (1 - ss(enter, enter + 0.5, u)));
 
       /* processus et fichiers */
       var rowY = py0 + ph + (h - py0 - ph) * 0.5, n = C.nodes.length;
@@ -504,8 +504,10 @@
     return function (x, w, h, t, g) {
       var u = t - Math.floor(t / P) * P, S = Math.min(w / 380, h / 210), i, b, a, e;
       var fs = Math.max(8, 9.5 * S), cw = fnt.use(x, fs);
-      var H2 = Math.min(h * 0.4, 112 * S), bTop = h / 2 - H2 + fs * 1.6, bBot = h / 2 + H2;
-      var hx = w * 0.06, hw = w * 0.56, uw = hw / U, bh = Math.min(h * 0.14, 30 * S), rg = Math.min((bBot - bTop - bh) / (ROWS - 1), bh * 2.4);
+      /* format haut : le tas et la pile s'étirent sur la hauteur au lieu de rester dans une bande centrale */
+      var tall = h > w * 0.8;
+      var H2 = Math.min(h * 0.4, 112 * S * (tall ? 1.9 : 1)), bTop = h / 2 - H2 + fs * 1.6, bBot = h / 2 + H2;
+      var hx = w * 0.06, hw = w * 0.56, uw = hw / U, bh = Math.min(h * 0.14, 30 * S * (tall ? 1.25 : 1)), rg = Math.min((bBot - bTop - bh) / (ROWS - 1), bh * (tall ? 4 : 2.4));
       var hTop = bTop + 2;
       x.textBaseline = "middle"; x.textAlign = "start";
       x.fillStyle = c(WH, 0.45); x.fillText("heap", hx, hTop - fs * 1.2);
@@ -645,7 +647,8 @@
       var sW = port ? w * 0.84 : w * 0.7, sH = port ? h * 0.56 : h * 0.82;
       var cs = Math.floor(Math.min((sW - 16 * S) / (GW + 2), (sH - 26 * S) / (GH + 2)) * 2) / 2;
       var gw = cs * GW, gh = cs * GH, fw = gw + cs * 2 + 14 * S, fh = gh + cs * 2 + 26 * S;
-      var fx = port ? (w - fw) / 2 : w * 0.04 + (sW - fw) / 2, fy = port ? h * 0.06 + (sH - fh) / 2 : (h - fh) / 2;
+      /* format haut : écran et cartouche forment un bloc centré verticalement (pas de grand vide en bas) */
+      var fx = port ? (w - fw) / 2 : w * 0.04 + (sW - fw) / 2, fy = port ? Math.max(h * 0.04, (h - fh - 46 * S) / 2) : (h - fh) / 2;
       var gx = fx + (fw - gw) / 2, gy = fy + 18 * S + cs;
       /* fondu de rendu : prv -> cur entre tau 1.0 et 1.6 */
       var mix = ss(1.0, 1.6, tau), al = [0, 0, 0];

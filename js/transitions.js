@@ -222,6 +222,16 @@
     var s = at(el, a, extra);
     return { start: s, end: after(s, 40, at(el, b, extra)), scrub: scrub, invalidateOnRefresh: true };
   }
+  /* Entrées jouées en temps : même durée et même courbe partout */
+  var ENTER_T = 0.9, ENTER_EASE = "power3.out", ENTER_AT = 0.92;
+  function reveal(el, frac) {
+    var s = at(el, frac);
+    return {
+      /* Plafonnée juste sous le défilement maximal : l'entrée se déclenche toujours, même en bas de page */
+      start: function () { return Math.max(0, Math.min(s(), maxScroll() - 2)); },
+      toggleActions: "play none none reverse"
+    };
+  }
 
   /* ---------- Mise en scène ---------- */
   var mm = gsap.matchMedia();
@@ -267,7 +277,9 @@
       var ring = $("#iris-ring");
       var cam = { zoom: 1, rec: 0, mask: 1, glow: 0 };
       var iris = { r: 0 };
-      var geo = { w: 0, h: 0, cx: 0, cy: 0, R: 1, gs: 4 };
+      var geo = { w: 0, h: 0, cx: 0, cy: 0, R: 1, gs: 4, lh: [1, 1], fd: [120, 120] };
+      var navEl = $(".nav");
+      var lineOp = [1, 1];
       var BASE = 480;   /* diamètre de base des calques de lueur et d'anneau (voir transitions.css) */
       var canHole = !!(window.CSS && CSS.supports && CSS.supports("clip-path", 'path(evenodd, "M0 0H1V1Z")'));
       var state = { gone: false, diving: false, held: null, clip: "" };
@@ -281,6 +293,24 @@
         gsap.set(glow, { x: geo.cx, y: geo.cy });
         gsap.set(ring, { x: geo.cx, y: geo.cy });
         geo.gs = Math.max(geo.w, geo.h) * 1.5 / BASE;
+        /* Distance que chaque ligne du nom peut parcourir avant d'atteindre la barre de navigation : la ligne doit
+           être éteinte avant d'y arriver (mesures hors transforms, au refresh uniquement). */
+        var navB = navEl ? navEl.getBoundingClientRect().bottom : 0;
+        lines.forEach(function (l, i) {
+          var fs = parseFloat(window.getComputedStyle(l).fontSize) || 100;
+          geo.lh[i] = l.offsetHeight || fs;
+          geo.fd[i] = clamp(docTop(l) + fs * 0.06 - navB - 10, 18, i ? 130 : 140);
+        });
+      };
+      /* Opacité du nom calculée depuis sa montée : quelle que soit la hauteur d'écran, une ligne n'est plus visible
+         quand elle passe sous la barre de navigation. */
+      var fadeName = function () {
+        for (var i = 0; i < lines.length && i < 2; i++) {
+          var rise = -gsap.getProperty(lines[i], "yPercent") / 100 * geo.lh[i];
+          var x = clamp(rise / geo.fd[i], 0, 1);
+          var o = Math.round((1 - x) * (1 - x) * 1000) / 1000;
+          if (o !== lineOp[i]) { lineOp[i] = o; lines[i].style.opacity = o === 1 ? "" : String(o); }
+        }
       };
 
       /* L'iris : un trou circulaire dans le calque du hero (clip-path pair-impair), centré sur le corps central.
@@ -303,6 +333,7 @@
         }
         if (!canHole) pin.style.opacity = String(1 - iris.r);
         gsap.set(ring, { scale: Math.max(0.0001, (r * 2) / BASE) });
+        fadeName();
       };
 
       var onProgress = function (p) {
@@ -333,9 +364,7 @@
       });
       /* Le nom s'envole ligne par ligne (parallaxe), le texte suit */
       tl.to(lines[0], { yPercent: -165, duration: 0.36, ease: "power1.in" }, 0)
-        .to(lines[0], { opacity: 0, duration: 0.24, ease: "power1.out" }, 0.02)
         .to(lines[1], { yPercent: -120, duration: 0.38, ease: "power1.in" }, 0.035)
-        .to(lines[1], { opacity: 0, duration: 0.27, ease: "power1.out" }, 0.07)
         .to($(".hero-copy", hero), { y: -110, opacity: 0, duration: 0.34, ease: "power1.in" }, 0.05)
         .to($(".hero-cta", hero), { y: -70, opacity: 0, duration: 0.32, ease: "power1.in" }, 0.08)
         .to([$(".sim-controls", hero), $(".marquee", pin)], { y: 36, opacity: 0, duration: 0.2 }, 0)
@@ -359,6 +388,7 @@
         root.classList.remove("has-dive");
         pin.classList.remove("is-gone", "is-diving");
         pin.style.clipPath = ""; pin.style.webkitClipPath = ""; pin.style.opacity = "";
+        lines.forEach(function (l) { l.style.opacity = ""; });
         if (SIM) { if (SIM.setHidden) SIM.setHidden(false); if (SIM.setCamera) SIM.setCamera(1, 0, 1, 0); }
         if (App.holdVisuals) App.holdVisuals(false);
       });
@@ -398,16 +428,23 @@
       var firstTop = shown.length ? shown[0].offsetTop : 0;
       var wideTop = shown.some(function (c) { return c.offsetTop === firstTop && c.offsetWidth > colW * 1.4; });
       var drift = lefts.length >= 3 ? [0, 46, 92] : lefts.length === 2 ? [0, 52] : [0];
+      var gap = parseFloat(window.getComputedStyle(grid).rowGap) || 20;
+      var minH = Infinity;
+      shown.forEach(function (c) { if (c.offsetHeight < minH) minH = c.offsetHeight; });
+      /* Fenêtre de rattrapage d'une carte : jamais plus longue que la plus petite rangée (plus l'écart). Une carte est
+         donc posée avant que celle du dessous ne commence à rattraper : aucun chevauchement possible, même avec la carte
+         large sur deux colonnes ou après un filtre, et la grille est parfaitement alignée dès qu'une carte a passé le
+         bas de l'écran de cette distance. */
+      driftW = Math.max(80, Math.min(vh() * 0.42, (isFinite(minH) ? minH : 400) + gap));
       cells.forEach(function (c) {
         var col = Math.max(0, lefts.indexOf(c.offsetLeft));
         var fixed = c.hidden || !desk || (wideTop && c.offsetTop === firstTop) || c.offsetWidth > colW * 1.4;
         c._col = col;
-        /* La rangée de la carte large reste fixe ; les autres colonnes partent plus bas et rattrapent la première
-           sans jamais remonter de plus de 10 px (aucun chevauchement possible avec la rangée du dessus). */
+        /* La rangée de la carte large et la carte large restent fixes ; les autres colonnes entrent un peu plus bas. */
         c._from = fixed ? 0 : drift[col] || 0;
-        c._to = fixed || !col ? 0 : -10;
       });
     };
+    var driftW = 300;
     layout();
     ST.addEventListener("refreshInit", layout);
     undo.push(function () { ST.removeEventListener("refreshInit", layout); });
@@ -421,17 +458,16 @@
           scrollTrigger: { start: s0, end: function () { return s0() + vh() * 0.26; }, scrub: S, invalidateOnRefresh: true }
         });
     });
+    /* Dérive des colonnes : chaque carte entre décalée selon sa colonne et rattrape la grille sur driftW pixels
+       de défilement après avoir franchi le bas de l'écran. */
     if (desk) {
-      gsap.fromTo(cells,
-        { y: function (i, el) { return el._from || 0; } },
-        {
-          y: function (i, el) { return el._to || 0; }, ease: "none",
-          scrollTrigger: {
-            start: function () { return Math.max(0, docTop(grid) - vh()); },
-            end: function () { return docTop(grid) + grid.offsetHeight; },
-            scrub: S, invalidateOnRefresh: true
-          }
+      cells.forEach(function (c) {
+        var d0 = function () { return Math.max(0, Math.min(docTop(c) - vh(), maxScroll())); };
+        gsap.fromTo(c, { y: function () { return c._from || 0; } }, {
+          y: 0, ease: "power1.out",
+          scrollTrigger: { start: d0, end: function () { return d0() + driftW; }, scrub: S, invalidateOnRefresh: true }
         });
+      });
     }
 
     /* ===== 3. Bandeaux typographiques cinétiques ===== */
@@ -479,19 +515,18 @@
     /* ===== 4. Compétences : volets qui s'ouvrent depuis le bas, pilules en cascade ===== */
     var lead = $("#competences .section-lead");
     gsap.fromTo(lead, { y: 26, opacity: 0 }, { y: 0, opacity: 1, ease: "power1.out", scrollTrigger: span(lead, 0.95, 0.7, S) });
+    /* Entrées jouées en temps (et non au défilement) : une fois déclenchée, une entrée va toujours jusqu'au bout,
+       aucun bloc ne reste à mi-course quand le défilement s'arrête. Retour en arrière quand on remonte au-dessus. */
     $$(".skill-group").forEach(function (g) {
-      gsap.fromTo(g,
+      var tg = gsap.timeline({ scrollTrigger: reveal(g, ENTER_AT) });
+      tg.fromTo(g,
         { clipPath: "inset(100% -60px -60px -60px round 20px)", y: 54 },
-        { clipPath: "inset(0% -60px -60px -60px round 20px)", y: 0, ease: "power2.out", scrollTrigger: span(g, 0.97, 0.66, S) });
-      gsap.from($$(".pills > li", g), {
-        opacity: 0, y: 16, scale: 0.9, duration: 0.34, stagger: 0.022, ease: "power2.out",
-        scrollTrigger: { start: at(g, 0.8), toggleActions: "play none none reverse", invalidateOnRefresh: true }
-      });
+        { clipPath: "inset(0% -60px -60px -60px round 20px)", y: 0, duration: ENTER_T, ease: ENTER_EASE }, 0)
+        .fromTo($$(".pills > li", g), { opacity: 0, y: 16, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, stagger: 0.022, ease: "power2.out" }, 0.22);
     });
     var aside = $(".skills-index");
     if (aside) {
-      var skills = $(".skills");
-      gsap.fromTo(aside, { y: 60, opacity: 0 }, { y: 0, opacity: 1, ease: "power2.out", scrollTrigger: span(skills, 0.9, 0.55, S) });
+      gsap.fromTo(aside, { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: ENTER_T, delay: 0.1, ease: ENTER_EASE, scrollTrigger: reveal($(".skills"), ENTER_AT) });
     }
 
     /* ===== 5. Parcours : la ligne se trace, chaque étape glisse quand elle l'atteint ===== */
@@ -519,10 +554,9 @@
         onEnter: function () { li.classList.add("is-lit"); },
         onLeaveBack: function () { li.classList.remove("is-lit"); }
       });
-      var c0 = function () { return Math.max(0, hit() - 50); };
+      /* La carte glisse dès qu'elle entre franchement à l'écran, jouée en temps : elle termine toujours sa course */
       gsap.fromTo(card, { x: desk ? 90 : 36, opacity: 0 }, {
-        x: 0, opacity: 1, ease: "power2.out",
-        scrollTrigger: { start: c0, end: function () { return c0() + vh() * 0.2; }, scrub: S, invalidateOnRefresh: true }
+        x: 0, opacity: 1, duration: ENTER_T, ease: ENTER_EASE, scrollTrigger: reveal(li, ENTER_AT)
       });
     });
     undo.push(function () { items.forEach(function (li) { li.classList.add("is-lit"); }); });

@@ -1,4 +1,4 @@
-/* Visuels par projet (lot A) : ticket-tout, saas-internes, photo-analyzer, aws-microservices, my-pgp.
+/* Visuels par projet (lot A) : ticket-tout, saas-internes, my-pgp (aws-microservices est dans visuals-d.js).
    Contrat : voir VISUALS.md. Chaque fabrique prépare ses constantes ; draw() ne fait que dessiner. */
 (function () {
   var R = (window.PROJECT_VIZ = window.PROJECT_VIZ || {});
@@ -389,267 +389,7 @@
   };
 
   /* ------------------------------------------------------------------
-     3. Analyseur de photo : portrait abstrait, réticule, repères, scan,
-        puis note circulaire et trois critères.
-     ------------------------------------------------------------------ */
-  R["photo-analyzer"] = function (r, K) {
-    var c = K.c, IR = K.IR, PK = K.PK, WH = K.WH, PI2 = K.PI2, ss = K.sstep, lerp = K.lerp, clamp = K.clamp;
-    var P = 10, i;
-    /* repères en unités du cadre (0..1) */
-    var LM = new Float32Array([0.5, 0.17, 0.32, 0.36, 0.68, 0.36, 0.5, 0.56, 0.4, 0.42, 0.6, 0.42, 0.14, 0.86, 0.86, 0.86, 0.5, 0.78]);
-    var LINKS = new Int8Array([0, 2, 2, 3, 3, 1, 1, 0, 4, 5, 3, 8, 8, 6, 8, 7]);
-    var SC = [[0.82, 0.9, 0.7, 0.62], [0.68, 0.55, 0.84, 0.5], [0.91, 0.94, 0.86, 0.88]];
-    var NUM = [];
-    for (i = 0; i <= 100; i++) NUM.push(String(i));
-    function corner(x, px, py, sx, sy, L) {
-      x.moveTo(px, py + sy * L); x.lineTo(px, py); x.lineTo(px + sx * L, py);
-    }
-    return function draw(x, w, h, t, g) {
-      var p = K.frac(t / P), k = Math.floor(t / P), S = SC[((k % 3) + 3) % 3];
-      var tall = h > w * 0.8, fh, fw, fcx, fcy, gcx, gcy, gr, bx0, bx1, by0, bstep;
-      if (tall) {
-        fh = Math.min(0.52 * h, 0.75 * w); fw = fh * 0.8; fcx = w * 0.5; fcy = h * 0.06 + fh / 2;
-        gr = Math.min(0.12 * h, 0.15 * w); gcx = w * 0.08 + gr + 6; gcy = h * 0.8;
-        bx0 = gcx + gr + w * 0.08; bx1 = w * 0.92; by0 = gcy - gr * 0.7; bstep = gr * 0.7;
-      } else {
-        fh = Math.min(0.8 * h, 0.4 * w); fw = fh * 0.8; fcx = w * 0.06 + fw / 2; fcy = h * 0.5;
-        gr = Math.min(0.24 * h, 0.1 * w); gcx = fcx + fw / 2 + w * 0.06 + gr + 6; gcy = h * 0.5;
-        bx0 = gcx + gr + w * 0.07; bx1 = w * 0.94; by0 = h * 0.5 - gr * 0.62; bstep = gr * 0.62;
-      }
-      var fx = fcx - fw / 2, fy = fcy - fh / 2;
-      var hx = fcx, hy = fy + fh * 0.38, hr = fw * 0.2;
-
-      var lock = ss(0.06, 0.24, p) * (1 - ss(0.86, 0.98, p));
-      var scanP = clamp((p - 0.12) / 0.3, 0, 1), scanA = ss(0.12, 0.15, p) * (1 - ss(0.4, 0.44, p));
-      var scanY = fy + fh * scanP;
-      var mesh = ss(0.3, 0.42, p) * (1 - ss(0.86, 0.96, p));
-      var gv = ss(0.44, 0.64, p) * (1 - ss(0.86, 0.98, p));
-      var done = ss(0.78, 0.82, p) * (1 - ss(0.88, 0.96, p));
-
-      /* photo */
-      K.rr(x, fx, fy, fw, fh, 10); x.fillStyle = c(WH, 0.04); x.fill();
-      x.save(); K.rr(x, fx, fy, fw, fh, 10); x.clip();
-      var bg = x.createLinearGradient(fx, fy, fx + fw, fy + fh);
-      bg.addColorStop(0, c(IR, 0.12)); bg.addColorStop(1, c(PK, 0.05));
-      x.fillStyle = bg; x.fillRect(fx, fy, fw, fh);
-      x.beginPath(); x.ellipse(fcx, fy + fh * 1.02, fw * 0.42, fh * 0.34, 0, Math.PI, PI2); x.closePath();
-      x.fillStyle = K.grad(x, 0, fy + fh * 0.68, 0, fy + fh, 0.28 + 0.08 * g); x.fill();
-      x.beginPath(); x.rect(hx - hr * 0.42, hy + hr * 0.8, hr * 0.84, fh * 0.12); x.fillStyle = c(WH, 0.1); x.fill();
-      x.beginPath(); x.arc(hx, hy, hr, 0, PI2);
-      x.fillStyle = K.grad(x, hx - hr, hy - hr, hx + hr, hy + hr, 0.32 + 0.08 * g); x.fill();
-      x.strokeStyle = c(WH, 0.25); x.lineWidth = 1; x.stroke();
-      if (scanA > 0.01) {
-        var wash = x.createLinearGradient(0, scanY - fh * 0.25, 0, scanY);
-        wash.addColorStop(0, c(IR, 0)); wash.addColorStop(1, c(IR, 0.22 * scanA));
-        x.fillStyle = wash; x.fillRect(fx, scanY - fh * 0.25, fw, fh * 0.25);
-        x.beginPath(); x.moveTo(fx, scanY); x.lineTo(fx + fw, scanY);
-        x.lineWidth = 1.5; x.strokeStyle = c(WH, 0.9 * scanA); x.stroke();
-      }
-      x.restore();
-      x.lineWidth = 1.1;
-      K.rr(x, fx, fy, fw, fh, 10); x.strokeStyle = done > 0.01 ? c(PK, 0.25 + 0.6 * done) : c(WH, 0.2 + 0.1 * g); x.stroke();
-
-      /* réticule qui se resserre sur le sujet */
-      var rx0 = lerp(fx + 6, hx - hr * 1.45, lock), ry0 = lerp(fy + 6, hy - hr * 1.45, lock);
-      var rx1 = lerp(fx + fw - 6, hx + hr * 1.45, lock), ry1 = lerp(fy + fh - 6, hy + hr * 1.55, lock);
-      var cl = Math.max(6, fw * 0.08);
-      x.beginPath();
-      corner(x, rx0, ry0, 1, 1, cl); corner(x, rx1, ry0, -1, 1, cl); corner(x, rx0, ry1, 1, -1, cl); corner(x, rx1, ry1, -1, -1, cl);
-      x.lineWidth = 1.6; x.strokeStyle = c(lock > 0.95 ? PK : WH, 0.4 + 0.5 * lock + 0.1 * g); x.stroke();
-      if (lock > 0.5) {
-        var cc = (lock - 0.5) * 2;
-        x.beginPath(); x.moveTo(hx - 5, hy); x.lineTo(hx + 5, hy); x.moveTo(hx, hy - 5); x.lineTo(hx, hy + 5);
-        x.lineWidth = 1; x.strokeStyle = c(PK, 0.6 * cc * (1 - mesh * 0.6)); x.stroke();
-      }
-
-      /* repères posés par le scan, puis maillage */
-      if (mesh > 0.01) {
-        x.beginPath();
-        for (i = 0; i < LINKS.length; i += 2) {
-          var a = LINKS[i] * 2, b = LINKS[i + 1] * 2;
-          x.moveTo(fx + LM[a] * fw, fy + LM[a + 1] * fh); x.lineTo(fx + LM[b] * fw, fy + LM[b + 1] * fh);
-        }
-        x.lineWidth = 1; x.strokeStyle = c(IR, 0.45 * mesh); x.stroke();
-      }
-      var vis = 1 - ss(0.86, 0.96, p);
-      for (i = 0; i < LM.length; i += 2) {
-        var lx = fx + LM[i] * fw, ly = fy + LM[i + 1] * fh;
-        var on = (p < 0.5 ? ss(ly - 2, ly + 14, scanY) * ss(0.12, 0.13, p) : 1) * vis;
-        if (on <= 0.01) continue;
-        var pop = 1 + 1.5 * (1 - on);
-        x.beginPath(); x.arc(lx, ly, 2.2 * pop, 0, PI2); x.fillStyle = c(i === 0 || i === 6 ? PK : WH, 0.95 * on); x.fill();
-        x.beginPath(); x.arc(lx, ly, 5 * pop, 0, PI2); x.lineWidth = 1; x.strokeStyle = c(IR, 0.5 * on); x.stroke();
-      }
-
-      /* jauge de note */
-      var a0 = Math.PI * 0.75, span = Math.PI * 1.5, val = S[0] * gv;
-      K.halo(x, gcx, gcy, gr * 1.5, IR, 0.08 + 0.12 * gv + 0.06 * g);
-      x.lineCap = "round"; x.lineWidth = Math.max(4, gr * 0.12);
-      x.beginPath(); x.arc(gcx, gcy, gr, a0, a0 + span); x.strokeStyle = c(WH, 0.1); x.stroke();
-      if (val > 0.005) {
-        x.beginPath(); x.arc(gcx, gcy, gr, a0, a0 + span * val);
-        x.strokeStyle = K.grad(x, gcx - gr, gcy, gcx + gr, gcy, 0.95); x.stroke();
-        var ex = gcx + Math.cos(a0 + span * val) * gr, ey = gcy + Math.sin(a0 + span * val) * gr;
-        K.halo(x, ex, ey, 12, PK, 0.6 * gv);
-      }
-      x.lineCap = "butt"; x.lineWidth = 1;
-      x.beginPath();
-      for (i = 0; i <= 10; i++) {
-        var ta = a0 + span * i / 10, r0 = gr - x.lineWidth - gr * 0.18, r1 = r0 - (i % 5 ? 3 : 6);
-        x.moveTo(gcx + Math.cos(ta) * r0, gcy + Math.sin(ta) * r0); x.lineTo(gcx + Math.cos(ta) * r1, gcy + Math.sin(ta) * r1);
-      }
-      x.strokeStyle = c(WH, 0.25); x.stroke();
-      x.save();
-      x.font = "500 " + (gr > 55 ? 18 : 13) + "px 'Martian Mono', ui-monospace, monospace";
-      x.textAlign = "center"; x.textBaseline = "middle";
-      x.fillStyle = c(WH, 0.3 + 0.7 * ss(0.44, 0.5, p) * (1 - ss(0.86, 0.96, p)));
-      x.fillText(NUM[Math.round(val * 100)], gcx, gcy + 1);
-      x.restore();
-
-      /* trois critères : lumière, cadrage, arrière-plan */
-      var bw = bx1 - bx0 - 16;
-      for (i = 0; i < 3; i++) {
-        var yy = by0 + i * bstep, v = S[i + 1] * ss(0.52 + i * 0.07, 0.66 + i * 0.07, p) * (1 - ss(0.86, 0.98, p));
-        var ix = bx0 + 4;
-        x.beginPath();
-        if (i === 0) { x.arc(ix, yy, 3.5, 0, PI2); x.fillStyle = c(PK, 0.8); x.fill(); }
-        else if (i === 1) { x.rect(ix - 3.5, yy - 3.5, 7, 7); x.lineWidth = 1.2; x.strokeStyle = c(IR, 0.9); x.stroke(); }
-        else { x.moveTo(ix, yy - 4.5); x.lineTo(ix + 4.5, yy); x.lineTo(ix, yy + 4.5); x.lineTo(ix - 4.5, yy); x.closePath(); x.fillStyle = c(WH, 0.6); x.fill(); }
-        K.rr(x, bx0 + 16, yy - 2.5, bw, 5, 2.5); x.fillStyle = c(WH, 0.1); x.fill();
-        if (v > 0.01) { K.rr(x, bx0 + 16, yy - 2.5, Math.max(5, bw * v), 5, 2.5); x.fillStyle = K.grad(x, bx0 + 16, 0, bx0 + 16 + bw, 0, 0.9); x.fill(); }
-      }
-      x.lineWidth = 1;
-    };
-  };
-
-  /* ------------------------------------------------------------------
-     4. Du monolithe aux microservices : un bloc se fissure, se sépare en
-        conteneurs reliés à une base RDS, puis se referme.
-     ------------------------------------------------------------------ */
-  R["aws-microservices"] = function (r, K) {
-    var c = K.c, IR = K.IR, PK = K.PK, WH = K.WH, PI2 = K.PI2, ss = K.sstep, lerp = K.lerp, clamp = K.clamp;
-    var P = 11, NS = 4, NZ = 7, i, j;
-    var ZIG = new Float32Array(3 * (NZ + 1));
-    for (i = 0; i < 3; i++) for (j = 0; j <= NZ; j++) ZIG[i * (NZ + 1) + j] = (j === 0 || j === NZ) ? 0 : (r() - 0.5);
-    var ROWW = new Float32Array(NS * 3);
-    for (i = 0; i < ROWW.length; i++) ROWW[i] = 0.45 + r() * 0.45;
-    var PH = new Float32Array(NS);
-    for (i = 0; i < NS; i++) PH[i] = i * 0.25 + r() * 0.1;
-    var o = { x: 0, y: 0 };
-    return function draw(x, w, h, t, g) {
-      var p = K.frac(t / P);
-      var bh = Math.min(h, w * 0.62), oy = (h - bh) / 2;
-      var mw = Math.min(0.44 * w, 0.8 * bh), mh = Math.min(0.56 * bh, mw * 0.78), mcx = w * 0.5, mcy = oy + bh * 0.4;
-      var colW = mw / NS;
-      var cw = Math.min(0.18 * w, 0.5 * bh), chh = cw * 0.66, cyF = oy + bh * 0.26;
-      var dbx = w * 0.5, dby = oy + bh * 0.8, drx = Math.min(0.1 * w, 0.15 * bh), dry = drx * 0.28, dbh = drx * 0.75;
-
-      var crack = clamp((p - 0.06) / 0.14, 0, 1) * (1 - ss(0.26, 0.34, p));
-      var e = ss(0.2, 0.38, p) - ss(0.84, 0.98, p);
-      var db = ss(0.3, 0.42, p) * (1 - ss(0.8, 0.9, p));
-      var req = ss(0.42, 0.48, p) * (1 - ss(0.76, 0.82, p));
-      var shake = (p > 0.12 && p < 0.21) ? Math.sin(t * 60) * 0.8 * (1 - e) : 0;
-
-      /* base de données (RDS) */
-      if (db > 0.01) {
-        var dyy = dby + (1 - db) * 10;
-        K.halo(x, dbx, dyy, drx * 2, IR, 0.12 * db + 0.06 * g);
-        x.beginPath(); x.ellipse(dbx, dyy - dbh / 2, drx, dry, 0, Math.PI, PI2);
-        x.lineTo(dbx + drx, dyy + dbh / 2); x.ellipse(dbx, dyy + dbh / 2, drx, dry, 0, 0, Math.PI); x.closePath();
-        x.fillStyle = c(WH, 0.06 * db); x.fill(); x.lineWidth = 1.2; x.strokeStyle = c(IR, 0.75 * db); x.stroke();
-        x.beginPath(); x.ellipse(dbx, dyy - dbh / 2, drx, dry, 0, 0, PI2); x.fillStyle = c(IR, 0.14 * db); x.fill(); x.stroke();
-        x.beginPath(); x.ellipse(dbx, dyy, drx, dry, 0, 0, Math.PI); x.strokeStyle = c(IR, 0.4 * db); x.stroke();
-      }
-
-      /* liens et requêtes */
-      var cyNow = lerp(mcy, cyF, e);
-      for (i = 0; i < NS; i++) {
-        var fxc = w * (0.13 + i * 0.247), sx = lerp(mcx + (i - 1.5) * colW, fxc, e), sy0 = cyNow + lerp(mh, chh, e) / 2;
-        if (db > 0.01) {
-          var ex0 = sx, ey0 = sy0 + 2, ex1 = dbx + (i - 1.5) * drx * 0.4, ey1 = dby - dbh / 2 - dry + 2, ccx = sx, ccy = (ey0 + ey1) / 2 + 6;
-          var la = db * clamp((e - 0.6) / 0.4, 0, 1);
-          if (la > 0.01) {
-            x.beginPath(); x.moveTo(ex0, ey0); x.quadraticCurveTo(ccx, ccy, ex1, ey1);
-            x.lineWidth = 1; x.strokeStyle = c(WH, (0.16 + 0.08 * g) * la); x.stroke();
-          }
-          if (req > 0.01) {
-            var u = K.frac(t * 0.42 + PH[i]), down = u < 0.5, uu = down ? u * 2 : 2 - u * 2;
-            qpt(o, ex0, ey0, ccx, ccy, ex1, ey1, uu);
-            K.halo(x, o.x, o.y, 11, down ? PK : IR, 0.7 * req);
-            x.fillStyle = c(WH, req); x.beginPath(); x.arc(o.x, o.y, 2.2, 0, PI2); x.fill();
-          }
-        }
-      }
-      /* appel entre services, en arc au-dessus */
-      if (req > 0.01) {
-        var hop = Math.floor(t * 0.7) % 3, hu = K.frac(t * 0.7), ha = req * ss(0, 0.15, hu) * (1 - ss(0.85, 1, hu));
-        var hx0 = w * (0.13 + hop * 0.247), hx1 = hx0 + w * 0.247, hy = cyF - chh / 2 - 2, hcy = hy - bh * 0.16;
-        x.beginPath(); x.moveTo(hx0, hy); x.quadraticCurveTo((hx0 + hx1) / 2, hcy, hx1, hy);
-        x.lineWidth = 1; x.strokeStyle = c(PK, 0.3 * ha); x.stroke();
-        qpt(o, hx0, hy, (hx0 + hx1) / 2, hcy, hx1, hy, ss(0.1, 0.9, hu));
-        K.halo(x, o.x, o.y, 10, PK, 0.7 * ha);
-        x.fillStyle = c(WH, ha); x.beginPath(); x.arc(o.x, o.y, 2, 0, PI2); x.fill();
-      }
-
-      /* monolithe : contour global tant qu'il est uni */
-      var whole = 1 - clamp(e * 4, 0, 1);
-      if (whole > 0.01) {
-        K.halo(x, mcx, mcy, mw * 0.8, IR, (0.16 + 0.08 * g) * whole);
-        K.rr(x, mcx - mw / 2 + shake, mcy - mh / 2, mw, mh, 10);
-        x.fillStyle = c(WH, 0.06 * whole); x.fill();
-        x.lineWidth = 1.6; x.strokeStyle = K.grad(x, mcx - mw / 2, mcy, mcx + mw / 2, mcy, 0.9 * whole); x.stroke();
-      }
-      /* fissures */
-      if (crack > 0.01 && whole > 0.01) {
-        x.beginPath();
-        for (i = 0; i < 3; i++) {
-          var bxk = mcx + (i - 1) * colW + shake, top = mcy - mh / 2;
-          var reach = crack * NZ;
-          x.moveTo(bxk, top);
-          for (j = 1; j <= NZ; j++) {
-            var f = clamp(reach - (j - 1), 0, 1);
-            if (f <= 0) break;
-            var px0 = bxk + ZIG[i * (NZ + 1) + j - 1] * colW * 0.35, py0 = top + mh * (j - 1) / NZ;
-            var px1 = bxk + ZIG[i * (NZ + 1) + j] * colW * 0.35, py1 = top + mh * j / NZ;
-            x.lineTo(lerp(px0, px1, f), lerp(py0, py1, f));
-          }
-        }
-        x.lineWidth = 1.6; x.strokeStyle = c(PK, 0.95 * whole); x.stroke();
-      }
-      /* morceaux devenant conteneurs */
-      for (i = 0; i < NS; i++) {
-        var fx2 = w * (0.13 + i * 0.247);
-        var pcx = lerp(mcx + (i - 1.5) * colW, fx2, e) + shake, pcy = cyNow;
-        var pw = lerp(colW, cw, e), ph = lerp(mh, chh, e), x0 = pcx - pw / 2, y0 = pcy - ph / 2;
-        var ca = clamp(e * 3, 0, 1), box = clamp((e - 0.5) * 2, 0, 1);
-        if (ca > 0.01) {
-          K.halo(x, pcx, pcy, pw * 0.9, i % 2 ? PK : IR, (0.1 + 0.06 * g) * box);
-          K.rr(x, x0, y0, pw, ph, lerp(2, 6, e));
-          x.fillStyle = c(WH, 0.06); x.fill();
-          x.lineWidth = 1.3; x.strokeStyle = c(i % 2 ? PK : IR, 0.25 + 0.65 * ca); x.stroke();
-        }
-        if (box > 0.01) {
-          x.beginPath();
-          for (j = 1; j < 6; j++) { var rx = x0 + pw * j / 6; x.moveTo(rx, y0 + ph * 0.3); x.lineTo(rx, y0 + ph * 0.86); }
-          x.lineWidth = 1; x.strokeStyle = c(WH, 0.12 * box); x.stroke();
-          K.rr(x, x0, y0, pw, ph * 0.22, Math.min(6, ph * 0.11));
-          x.fillStyle = c(i % 2 ? PK : IR, 0.25 * box); x.fill();
-          var blink = req > 0.01 && K.frac(t * 0.42 + PH[i]) > 0.92 ? 1 : 0.35;
-          x.beginPath(); x.arc(x0 + pw - 7, y0 + ph * 0.11, 2, 0, PI2); x.fillStyle = c(WH, blink * box); x.fill();
-        }
-        /* rangées de modules internes, qui suivent leur morceau */
-        var rows = 3, ra = 1 - box * 0.6;
-        for (j = 0; j < rows; j++) {
-          var yy = lerp(y0 + ph * (0.2 + j * 0.26), y0 + ph * (0.38 + j * 0.18), e), wl = (pw - 10) * ROWW[i * 3 + j];
-          K.rr(x, x0 + 5, yy, Math.max(3, wl), 3, 1.5); x.fillStyle = c(WH, 0.28 * ra + 0.1 * box); x.fill();
-        }
-      }
-      x.lineWidth = 1;
-    };
-  };
-
-  /* ------------------------------------------------------------------
-     5. my_pgp : deux clés qui tournent et s'emboîtent, une porte de
+     3. my_pgp : deux clés qui tournent et s'emboîtent, une porte de
         chiffrement, des octets clairs qui ressortent brouillés.
      ------------------------------------------------------------------ */
   R["my-pgp"] = function (r, K) {
@@ -681,10 +421,12 @@
 
     return function draw(x, w, h, t, g) {
       var p = K.frac(t / P), k = Math.floor(t / P), kk = ((k % 4) + 4) % 4;
-      var bh = Math.min(h, w * 0.62), oy = (h - bh) / 2;
-      var gx = w * 0.5, rowY = oy + bh * 0.68, sp = Math.min(0.07 * w, 40), cwid = sp * 0.82, chg = Math.min(22, bh * 0.13);
-      var kr = Math.min(0.065 * bh, 0.035 * w, 16), L = kr * 3.6, keyY = oy + bh * 0.24;
-      var gTop = rowY - bh * 0.2, gBot = rowY + bh * 0.2;
+      /* format haut : la scène s'étire sur toute la hauteur (clés en haut, porte et octets plus bas) au lieu de rester dans une bande */
+      var tall = h > w * 0.8;
+      var bh = tall ? h * 0.9 : Math.min(h, w * 0.62), oy = (h - bh) / 2;
+      var gx = w * 0.5, rowY = oy + bh * (tall ? 0.64 : 0.68), sp = Math.min(0.07 * w, 40), cwid = sp * 0.82, chg = Math.min(22, bh * 0.13, sp * 1.1);
+      var kr = tall ? Math.min(0.05 * w, 18) : Math.min(0.065 * bh, 0.035 * w, 16), L = kr * 3.6, keyY = oy + bh * (tall ? 0.16 : 0.24);
+      var gh = tall ? Math.min(bh * 0.16, w * 0.22) : bh * 0.2, gTop = rowY - gh, gBot = rowY + gh;
 
       var meet = ss(0.04, 0.3, p) - ss(0.84, 0.98, p);
       var phi = PI2 * 2 * (ss(0.04, 0.3, p) + ss(0.84, 0.98, p));
@@ -713,7 +455,7 @@
       }
 
       /* porte de chiffrement */
-      K.halo(x, gx, rowY, bh * 0.3, PK, 0.06 + 0.22 * ga + 0.06 * g);
+      K.halo(x, gx, rowY, gh * 1.5, PK, 0.06 + 0.22 * ga + 0.06 * g);
       K.rr(x, gx - 6, gTop, 12, gBot - gTop, 6);
       x.fillStyle = c(WH, 0.04 + 0.05 * ga); x.fill();
       x.lineWidth = 1.4; x.strokeStyle = K.grad(x, gx, gTop, gx, gBot, 0.35 + 0.6 * ga); x.stroke();

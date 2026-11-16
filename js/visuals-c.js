@@ -22,6 +22,7 @@
     var order = new Array(GX * GY);
     for (var yy = 0; yy < GY; yy++) for (var xx = 0; xx < GX; xx++) order[yy * GX + xx] = yy * GX + xx;
     var jx = 0.5 + (r() - 0.5) * 0.1; // léger décalage déterministe (inutilisé hors graine)
+    var DASH = [3, 3], NODASH = [];
 
     return function draw(x, w, h, t, g) {
       var camX = w * camXn, camY = h * camYn;
@@ -105,7 +106,7 @@
         // rayon d'ombre vers la lumière
         x.strokeStyle = K.c(K.PK, 0.75); x.lineWidth = 1.4;
         x.beginPath(); x.moveTo(hx, hy);
-        x.setLineDash([3, 3]); x.lineTo(lx, ly); x.stroke(); x.setLineDash([]);
+        x.setLineDash(DASH); x.lineTo(lx, ly); x.stroke(); x.setLineDash(NODASH);
         K.halo(x, hx, hy, 12, K.PK, 0.6);
       }
       x.lineWidth = 1;
@@ -128,6 +129,7 @@
     for (var i = 0; i < rays; i++) dirs[i] = (i / (rays - 1) - 0.5) * 0.52;
     var MAXS = 9;                      // sauts max par rayon
     var EPS = 0.004;
+    var AIM = [2, 5], NODASH2 = [];
 
     return function draw(x, w, h, t, g) {
       var ex = w * eyeXn, ey = h * eyeYn;
@@ -180,12 +182,14 @@
       var dx = Math.cos(ang), dy = Math.sin(ang);
 
       // ligne de visée discrète
-      x.strokeStyle = K.c(K.WH, 0.1 + 0.06 * g); x.lineWidth = 1;
-      x.setLineDash([2, 5]); x.beginPath(); x.moveTo(ex, ey); x.lineTo(ex + dx * w, ey + dy * w); x.stroke(); x.setLineDash([]);
+      x.strokeStyle = K.c(K.WH, (0.1 + 0.06 * g) * K.sstep(0, 0.08, stepF) * (1 - K.sstep(0.84, 1, stepF))); x.lineWidth = 1;
+      x.setLineDash(AIM); x.beginPath(); x.moveTo(ex, ey); x.lineTo(ex + dx * w, ey + dy * w); x.stroke(); x.setLineDash(NODASH2);
 
       // sphere tracing : positions successives
       var px = ex, py = ey, hit = false, s;
-      var shown = Math.ceil(stepF * MAXS); // combien de cercles révélés
+      /* les sauts se révèlent sur 80 % de la marche, puis le rayon s'estompe avant le suivant (aucune coupure) */
+      var shown = Math.ceil(Math.min(1, stepF / 0.8) * MAXS); // combien de cercles révélés
+      var rayA = 1 - K.sstep(0.84, 1, stepF);
       for (s = 0; s < MAXS; s++) {
         var d = sdf(px, py);
         if (d < EPS) { hit = true; }
@@ -193,13 +197,13 @@
         if (revealed && d > 0) {
           var a = (0.7 - s * 0.055) * (0.6 + 0.4 * g);
           // cercle de distance : rayon = distance à la surface
-          x.strokeStyle = K.c(K.IR, Math.max(0.12, a));
+          x.strokeStyle = K.c(K.IR, Math.max(0.12, a) * rayA);
           x.lineWidth = 1; x.beginPath(); x.arc(px, py, Math.max(2, d), 0, K.PI2); x.stroke();
           // point de l'échantillon
-          x.fillStyle = K.c(K.WH, 0.8 * a + 0.2); x.beginPath(); x.arc(px, py, 2.2, 0, K.PI2); x.fill();
+          x.fillStyle = K.c(K.WH, (0.8 * a + 0.2) * rayA); x.beginPath(); x.arc(px, py, 2.2, 0, K.PI2); x.fill();
         }
         if (hit) {
-          if (revealed) { K.halo(x, px, py, 16, K.PK, 0.7); x.fillStyle = K.c(K.WH, 1); x.beginPath(); x.arc(px, py, 3, 0, K.PI2); x.fill(); }
+          if (revealed) { K.halo(x, px, py, 16, K.PK, 0.7 * rayA); x.fillStyle = K.c(K.WH, rayA); x.beginPath(); x.arc(px, py, 3, 0, K.PI2); x.fill(); }
           break;
         }
         px += dx * d; py += dy * d;
@@ -209,7 +213,7 @@
   };
 
   /* =========================================================================
-     houndlabs : graphe Active Directory (BloodHound). Nœuds typés — utilisateurs
+     houndlabs : graphe Active Directory (BloodHound). Nœuds typés : utilisateurs
      (cercles), machines (carrés), groupes (hexagones), contrôleur de domaine
      (losange plus grand). Un chemin d'attaque se découvre arête par arête
      depuis un compte de départ jusqu'au DC ; chaque nœud compromis passe au
@@ -264,6 +268,10 @@
     }
     var paths = [buildPath((r() * 1e6) | 0), buildPath((r() * 1e6) | 0)];
 
+    /* format haut : les couches s'écartent verticalement pour occuper le cadre */
+    var HY = 0, KY = 1;
+    function Y(v) { return HY * (0.5 + (v - 0.5) * KY); }
+
     function drawNode(x, K, n, px, py, sz, lit, g) {
       var col = lit > 0.02 ? K.PK : K.IR;
       if (lit > 0.3) K.halo(x, px, py, sz * (n.type === "dc" ? 3 : 2.2), K.PK, 0.4 * lit);
@@ -284,6 +292,7 @@
 
     return function draw(x, w, h, t, g) {
       var mn = Math.min(w, h), sz = mn * 0.028;
+      HY = h; KY = h > w * 0.8 ? 1.35 : 1;
       // boucle : découverte (par arête) -> maintien -> extinction -> chemin suivant
       var perPath = 6.0;                         // ~6 s par chemin -> 12 s total
       var gt = (t % (perPath * paths.length));
@@ -302,7 +311,7 @@
       for (k = 0; k < edges.length; k++) {
         var A = nodes[edges[k].a], B = nodes[edges[k].b];
         x.strokeStyle = K.c(K.WH, 0.1 + 0.06 * g);
-        x.beginPath(); x.moveTo(A.x * w, A.y * h); x.lineTo(B.x * w, B.y * h); x.stroke();
+        x.beginPath(); x.moveTo(A.x * w, Y(A.y)); x.lineTo(B.x * w, Y(B.y)); x.stroke();
       }
 
       // --- arêtes du chemin, révélées une à une ---
@@ -310,7 +319,7 @@
         var f = K.clamp(head - k, 0, 1) * fade;
         if (f <= 0) continue;
         var na = nodes[path[k]], nb = nodes[path[k + 1]];
-        var ax = na.x * w, ay = na.y * h, bx2 = nb.x * w, by2 = nb.y * h;
+        var ax = na.x * w, ay = Y(na.y), bx2 = nb.x * w, by2 = Y(nb.y);
         var ex2 = K.lerp(ax, bx2, f), ey2 = K.lerp(ay, by2, f);
         x.lineWidth = 2.4; x.strokeStyle = K.grad(x, ax, ay, bx2, by2, fade);
         x.beginPath(); x.moveTo(ax, ay); x.lineTo(ex2, ey2); x.stroke();
@@ -329,7 +338,7 @@
         var n = nodes[k];
         var pi = path.indexOf(k);
         var lit = pi >= 0 ? K.clamp(head - pi + 0.2, 0, 1) * fade : 0;
-        drawNode(x, K, n, n.x * w, n.y * h, sz, lit, g);
+        drawNode(x, K, n, n.x * w, Y(n.y), sz, lit, g);
       }
       x.lineWidth = 1;
     };
@@ -345,6 +354,9 @@
     var payload = "' OR 1=1 --";
     var MONO = "500 11px 'Martian Mono', ui-monospace, monospace";
     var flagsBase = 2 + ((r() * 3) | 0);
+    var COLS = [K.IR, K.PK, K.WH];
+    var SUB = [], LABELS = ["hdr", "payload", "sig"], SEGS = [0.26, 0.4, 0.34];
+    for (var q = 0; q <= payload.length; q++) SUB.push(payload.slice(0, q));
 
     return function draw(x, w, h, t, g) {
       var cyc = (t * 0.1) % 1;           // boucle ~10 s
@@ -357,60 +369,72 @@
       var decodeP = K.sstep(0.7, 0.9, cyc);
       var flagP = K.sstep(0.84, 0.92, cyc) * (1 - K.sstep(0.97, 1, cyc));
 
+      /* fin de boucle : tout s'estompe avant la reprise (pas de saut du champ rose au champ vide) */
+      var out = 1 - K.sstep(0.92, 0.99, cyc);
+      var okE = okP * out, unE = unlockP * out;
       var mn = Math.min(w, h);
       var fieldW = w * 0.52, fieldH = Math.max(22, mn * 0.12);
       var fieldX = w * 0.1, fieldY = h * 0.2;
 
-      // --- champ de saisie ---
+      // --- champ de saisie : contour pervenche qui vire au rose ---
+      if (okE > 0.01) K.halo(x, fieldX + fieldW / 2, fieldY + fieldH / 2, fieldW * 0.55, K.PK, 0.12 * okE);
       K.rr(x, fieldX, fieldY, fieldW, fieldH, 6);
-      x.fillStyle = K.c(K.WH, 0.04 + 0.03 * okP);
+      x.fillStyle = K.c(K.WH, 0.04 + 0.03 * okE);
       x.fill();
       x.lineWidth = 1.5;
-      x.strokeStyle = okP > 0.1 ? K.c(K.PK, 0.5 + 0.5 * okP) : K.c(K.IR, 0.4 + 0.3 * g);
-      x.stroke();
-      if (okP > 0.2) K.halo(x, fieldX + fieldW / 2, fieldY + fieldH / 2, fieldW * 0.55, K.PK, 0.12 * okP);
+      if (okE < 0.99) { x.strokeStyle = K.c(K.IR, (0.4 + 0.3 * g) * (1 - okE)); x.stroke(); }
+      if (okE > 0.01) { x.strokeStyle = K.c(K.PK, 0.5 + 0.5 * okE); x.globalAlpha = okE; x.stroke(); x.globalAlpha = 1; }
 
       // texte saisi (sous-chaîne selon la progression de frappe)
       var nch = Math.round(payload.length * typeP);
-      var shown = payload.slice(0, nch);
+      var shown = SUB[nch];
       x.font = MONO; x.textBaseline = "middle";
-      x.fillStyle = okP > 0.1 ? K.c(K.PK, 0.95) : K.c(K.WH, 0.9);
-      x.fillText(shown, fieldX + 10, fieldY + fieldH / 2);
+      if (okE < 0.99) { x.fillStyle = K.c(K.WH, 0.9 * (1 - okP) * out); x.fillText(shown, fieldX + 10, fieldY + fieldH / 2); }
+      if (okE > 0.01) { x.fillStyle = K.c(K.PK, 0.95 * okE); x.fillText(shown, fieldX + 10, fieldY + fieldH / 2); }
       // curseur clignotant pendant la frappe
       if (typeP < 1 && typeP > 0) {
         var cwid = x.measureText(shown).width;
         if (Math.sin(t * 8) > 0) { x.fillStyle = K.c(K.WH, 0.7); x.fillRect(fieldX + 11 + cwid, fieldY + fieldH * 0.25, 2, fieldH * 0.5); }
       }
 
-      // --- cadenas à droite du champ ---
+      // --- cadenas à droite du champ : blanc fermé, rose ouvert (fondu entre les deux) ---
       var lkx = fieldX + fieldW + mn * 0.07, lky = fieldY + fieldH / 2, ls = mn * 0.05;
-      if (unlockP > 0.4) K.halo(x, lkx, lky, ls * 2.4, K.PK, 0.3 * unlockP);
-      // corps
-      x.strokeStyle = unlockP > 0.3 ? K.c(K.PK, 0.9) : K.c(K.WH, 0.4 + 0.2 * g);
-      x.fillStyle = K.c(K.WH, 0.06);
+      if (unE > 0.01) K.halo(x, lkx, lky, ls * 2.4, K.PK, 0.3 * K.sstep(0.3, 1, unE));
+      var open = unE;
       x.lineWidth = 1.6;
-      K.rr(x, lkx - ls * 0.75, lky - ls * 0.1, ls * 1.5, ls * 1.3, 3); x.fill(); x.stroke();
-      // anse : pivote à l'ouverture
-      var open = K.sstep(0.3, 0.46, cyc);
-      x.save(); x.translate(lkx - ls * 0.45, lky - ls * 0.1);
-      x.rotate(-open * 0.6);
-      x.beginPath(); x.arc(ls * 0.45, 0, ls * 0.5, Math.PI, K.PI2); x.stroke();
-      x.restore();
-      // trou de serrure
-      x.fillStyle = unlockP > 0.3 ? K.c(K.PK, 0.9) : K.c(K.WH, 0.4);
-      x.beginPath(); x.arc(lkx, lky + ls * 0.45, ls * 0.14, 0, K.PI2); x.fill();
+      for (var pass = 0; pass < 2; pass++) {
+        var wgt = pass ? unE : 1 - unE;
+        if (wgt < 0.01) continue;
+        x.globalAlpha = wgt;
+        x.strokeStyle = pass ? K.c(K.PK, 0.9) : K.c(K.WH, 0.4 + 0.2 * g);
+        x.fillStyle = K.c(K.WH, 0.06);
+        K.rr(x, lkx - ls * 0.75, lky - ls * 0.1, ls * 1.5, ls * 1.3, 3); x.fill(); x.stroke();
+        // anse : pivote à l'ouverture
+        x.save(); x.translate(lkx - ls * 0.45, lky - ls * 0.1);
+        x.rotate(-open * 0.6);
+        x.beginPath(); x.arc(ls * 0.45, 0, ls * 0.5, Math.PI, K.PI2); x.stroke();
+        x.restore();
+        // trou de serrure
+        x.fillStyle = pass ? K.c(K.PK, 0.9) : K.c(K.WH, 0.4);
+        x.beginPath(); x.arc(lkx, lky + ls * 0.45, ls * 0.14, 0, K.PI2); x.fill();
+      }
+      x.globalAlpha = 1;
+
+      // emplacement du jeton, discret tant qu'il n'est pas déplié (évite une moitié basse vide)
+      var jy = h * 0.58, jh = Math.max(16, mn * 0.09), jx0 = w * 0.1, fullW = w * 0.8;
+      K.rr(x, jx0, jy, fullW, jh, 4);
+      x.lineWidth = 1; x.strokeStyle = K.c(K.WH, (0.07 + 0.04 * g) * (1 - jwtP * out)); x.stroke();
 
       // --- JWT à trois segments ---
-      if (jwtP > 0.01) {
-        var jy = h * 0.58, jh = Math.max(16, mn * 0.09), jx0 = w * 0.1;
-        var fullW = w * 0.8;
-        var segs = [0.26, 0.4, 0.34];   // header / payload / signature
-        var cols = [K.IR, K.PK, K.WH];
+      if (jwtP > 0.01 && out > 0.01) {
+        x.globalAlpha = out;
+        var segs = SEGS;   // header / payload / signature
+        var cols = COLS;
         var gap = 6;
         var grown = jwtP;
         var cx = jx0;
         x.font = MONO; x.textBaseline = "middle";
-        var labels = ["hdr", "payload", "sig"];
+        var labels = LABELS;
         for (var si = 0; si < 3; si++) {
           var sw = (fullW - gap * 2) * segs[si] * grown;
           K.rr(x, cx, jy, sw, jh, 4);
@@ -435,6 +459,7 @@
           }
           cx += sw + gap * grown;
         }
+        x.globalAlpha = 1;
       }
 
       // --- compteur de drapeaux ---

@@ -1,10 +1,11 @@
+/* Visuel par projet (lot D) : aws-microservices, formation AWS (architecture en microservices) et hackathon AWS.
+   Contrat : voir VISUALS.md. */
 (function () {
   var R = (window.PROJECT_VIZ = window.PROJECT_VIZ || {});
 
   R["aws-microservices"] = function (r, K) {
     var PI = Math.PI;
     var LOOP = 11;
-    var BW = 380, BH = 210;
     var CX = 128, CY = 44;
     var boxes = [
       { x: 58, y: 96, from: 0.06 },
@@ -37,19 +38,14 @@
       x.fill();
     }
 
-    return function draw(x, w, h, t, g) {
-      var s = Math.min(w / BW, h / BH);
-      var p = K.frac(t / LOOP);
-      var fade = K.sstep(0, 0.05, p) * (1 - K.sstep(0.93, 1, p));
+    /* deux scènes indépendantes, chacune dans sa boîte de référence (unités de la carte 380x210) :
+       formation à gauche ou en haut, hackathon à droite ou en bas ; l'ensemble occupe le cadre quel que soit son format */
+    var FB = { x: 30, y: 16, w: 196, h: 194 }, HB = { x: 246, y: 16, w: 108, h: 194 };
+    var PCT = [];
+    for (var q = 0; q <= 100; q++) PCT.push(q + " %");
+
+    function formation(x, p, t, g, fade) {
       var i, b, a, k;
-
-      x.save();
-      x.translate((w - BW * s) / 2, (h - BH * s) / 2);
-      x.scale(s, s);
-      x.lineWidth = 1.2;
-      x.lineJoin = "round";
-
-      /* formation : une architecture cloud qui se monte pièce par pièce */
       K.halo(x, CX, CY + 4, 46, K.IR, (0.1 + 0.12 * g) * fade);
       cloud(x);
       x.fillStyle = K.c(K.IR, 0.08 * fade);
@@ -118,40 +114,34 @@
       }
 
       x.font = FONT;
-      x.textAlign = "center";
-      x.textBaseline = "middle";
-      x.fillStyle = K.c(K.WH, 0.45 * fade);
+      x.fillStyle = K.c(K.WH, 0.5 * fade);
       x.fillText("formation", CX, 200);
+    }
 
-      /* séparation */
-      x.strokeStyle = K.c(K.WH, 0.1 * fade);
-      x.beginPath();
-      x.moveTo(232, 24);
-      x.lineTo(232, 190);
-      x.stroke();
-
-      /* hackathon : le temps qui file et les étapes qui se valident */
-      var left = 1 - K.sstep(0.08, 0.86, p);
-      var done = 1 - left;
+    /* hackathon : un anneau d'avancement et des étapes qui se valident (aucune durée affichée) */
+    function hackathon(x, p, g, fade) {
+      var i;
+      var done = K.sstep(0.08, 0.86, p);
       K.halo(x, RX, RY, RR + 18, K.PK, (0.08 + 0.1 * g) * fade);
       x.strokeStyle = K.c(K.WH, 0.14 * fade);
       x.lineWidth = 4;
       x.beginPath();
       x.arc(RX, RY, RR, 0, K.PI2);
       x.stroke();
-      x.strokeStyle = K.grad(x, RX - RR, RY, RX + RR, RY, (0.85 + 0.15 * g) * fade);
-      x.lineCap = "round";
-      x.beginPath();
-      x.arc(RX, RY, RR, -PI / 2, -PI / 2 + K.PI2 * Math.max(left, 0.002));
-      x.stroke();
-      x.lineCap = "butt";
+      if (done > 0.002) {
+        x.strokeStyle = K.grad(x, RX - RR, RY, RX + RR, RY, (0.85 + 0.15 * g) * fade);
+        x.lineCap = "round";
+        x.beginPath();
+        x.arc(RX, RY, RR, -PI / 2, -PI / 2 + K.PI2 * done);
+        x.stroke();
+        x.lineCap = "butt";
+      }
       x.lineWidth = 1.2;
 
-      var hours = 24 * left;
-      var hh = Math.floor(hours), mm = Math.floor((hours - hh) * 60);
+      var win = K.sstep(0.86, 0.9, p) * fade;
       x.font = FONTBIG;
-      x.fillStyle = K.c(K.WH, 0.92 * fade);
-      x.fillText((hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm, RX, RY + 1);
+      x.fillStyle = K.c(K.WH, 0.92 * fade * (1 - win));
+      if (win < 0.99) x.fillText(PCT[Math.round(done * 100)], RX, RY + 1);
 
       var bw = 13, gap = 4, x0 = RX - (BARS * bw + (BARS - 1) * gap) / 2;
       for (i = 0; i < BARS; i++) {
@@ -166,24 +156,67 @@
         }
       }
 
-      var win = K.sstep(0.86, 0.9, p) * fade;
       if (win > 0) {
         K.halo(x, RX, RY, RR + 30 * win, K.PK, 0.22 * win);
         x.strokeStyle = K.c(K.WH, 0.9 * win);
-        x.lineWidth = 2;
+        x.lineWidth = 2.4;
+        x.lineCap = "round";
         x.beginPath();
-        x.moveTo(RX - 9, RY + 18);
-        x.lineTo(RX - 3, RY + 24);
-        x.lineTo(RX + 10, RY + 12);
+        x.moveTo(RX - 11, RY + 1);
+        x.lineTo(RX - 3, RY + 9);
+        x.lineTo(RX + 12, RY - 7);
         x.stroke();
+        x.lineCap = "butt";
+        x.lineWidth = 1.2;
       }
 
       x.font = FONT;
-      x.fillStyle = K.c(K.WH, 0.45 * fade);
+      x.fillStyle = K.c(K.WH, 0.5 * fade);
       x.fillText("hackathon", RX, 200);
+    }
 
-      x.lineWidth = 1;
+    function place(x, B, ox, oy, s) {
+      x.save();
+      x.translate(ox - B.w * s / 2, oy - B.h * s / 2);
+      x.scale(s, s);
+      x.translate(-B.x, -B.y);
+    }
+
+    return function draw(x, w, h, t, g) {
+      var p = K.frac(t / LOOP);
+      var fade = K.sstep(0, 0.05, p) * (1 - K.sstep(0.93, 1, p));
+      var wide = w > h * 1.15, s, cut;
+      if (wide) {
+        cut = w * FB.w / (FB.w + HB.w);
+        s = Math.min(cut * 0.94 / FB.w, (w - cut) * 0.9 / HB.w, h * 0.94 / FB.h);
+      } else {
+        cut = h * 0.56;
+        s = Math.min(w * 0.9 / FB.w, cut * 0.96 / FB.h, (h - cut) * 0.96 / HB.h);
+      }
+      x.lineJoin = "round";
+      x.textAlign = "center";
+      x.textBaseline = "middle";
+
+      place(x, FB, wide ? cut / 2 : w / 2, wide ? h / 2 : cut / 2, s);
+      x.lineWidth = 1.2;
+      formation(x, p, t, g, fade);
       x.restore();
+
+      place(x, HB, wide ? (cut + w) / 2 : w / 2, wide ? h / 2 : (cut + h) / 2, s);
+      x.lineWidth = 1.2;
+      hackathon(x, p, g, fade);
+      x.restore();
+
+      /* séparation */
+      x.lineWidth = 1;
+      x.strokeStyle = K.c(K.WH, 0.1 * fade);
+      x.beginPath();
+      if (wide) { x.moveTo(cut, h * 0.12); x.lineTo(cut, h * 0.9); }
+      else { x.moveTo(w * 0.14, cut); x.lineTo(w * 0.86, cut); }
+      x.stroke();
+      x.lineJoin = "miter";
+      x.textAlign = "start";
+      x.textBaseline = "alphabetic";
     };
   };
 })();

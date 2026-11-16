@@ -82,7 +82,9 @@
   var FADE_LEN = 220;
   var NAME_PAD = 24;
   var NAME_FEATHER = 24;
-  var lay = { edge: 0, fade: FADE_LEN, name: null, ax: 0, ay: 0, rad: 100 };
+  /* dens : densité relative au rayon disponible (1 sur grand écran) ; vers 1024 px la zone libre se resserre,
+     on y place moins de corps pour garder des orbites lisibles au lieu d'un amas et d'une pluie de fusions. */
+  var lay = { edge: 0, fade: FADE_LEN, name: null, ax: 0, ay: 0, rad: 100, dens: 1 };
 
   function unionRects(list, acc) {
     for (var i = 0; i < list.length; i++) {
@@ -121,6 +123,7 @@
       lay.ax = W * 0.5;
       lay.ay = H * 0.5;
       lay.rad = Math.max(80, Math.min(Math.min(lay.ax, W - lay.ax) * 0.92, H * 0.46));
+      lay.dens = 1;
       return;
     }
     var hr = host.getBoundingClientRect();
@@ -142,6 +145,7 @@
     lay.ax = edge + zone / 2;
     lay.ay = H * 0.5;
     lay.rad = Math.max(60, Math.min(zone * 0.46, H * 0.42));
+    lay.dens = Math.max(0.6, Math.min(1, lay.rad / 280));
 
     lay.name = null;
     var h1 = document.querySelector(".hero .name");
@@ -277,7 +281,7 @@
     var rmin = Math.min(64, rmax * 0.25);
     var central = makeBody(a.x, a.y, 0, 0, CENTRAL_MASS);
     bodies.push(central);
-    var count = W < 600 ? 35 : Math.round(rand(64, 86));
+    var count = W < 600 ? 35 : Math.round(rand(64, 86) * lay.dens);
     var px = 0;
     var py = 0;
     for (var i = 0; i < count; i++) {
@@ -382,9 +386,9 @@
       initScene();
       return;
     }
-    if (bodies.length < (narrow ? 20 : MIN_BODIES)) refilling = true;
+    if (bodies.length < (narrow ? 20 : Math.round(MIN_BODIES * lay.dens))) refilling = true;
     if (!refilling) return;
-    if (bodies.length >= (narrow ? 28 : REFILL_TO)) {
+    if (bodies.length >= (narrow ? 28 : Math.round(REFILL_TO * lay.dens))) {
       refilling = false;
       return;
     }

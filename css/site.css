@@ -50,6 +50,8 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 html:has(dialog[open]) { overflow: hidden; }
+/* Les entrées animées décalent des éléments hors cadre : sans ce garde-fou, la page s'élargit sur téléphone. */
+main { overflow-x: clip; }
 
 body {
   margin: 0;
